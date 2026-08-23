@@ -1,0 +1,384 @@
+<title>佳安工地导航</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+
+<style>
+:root{
+  --ground:#F2F4F1;
+  --surface:#FFFFFF;
+  --surface-2:#FAFBF9;
+  --ink:#15191B;
+  --ink-soft:#5A6469;
+  --ink-faint:#8B9499;
+  --rule:#DCE0DB;
+  --rule-soft:#E9ECE7;
+  --steel:#2F5D6B;
+  --ok:#2C6B47;
+  --ok-bg:#E4EFE7;
+  --warn:#9E4A24;
+  --warn-bg:#F6E7DE;
+  --shadow:0 1px 2px rgba(21,25,27,.06), 0 4px 14px rgba(21,25,27,.05);
+  --cjk:"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  --sans:"IBM Plex Sans",var(--cjk);
+  --cond:"Barlow Condensed",var(--cjk);
+  --mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --ground:#111416;
+    --surface:#1A1E21;
+    --surface-2:#161A1C;
+    --ink:#E7EAE6;
+    --ink-soft:#9BA4A8;
+    --ink-faint:#6E777C;
+    --rule:#2A3033;
+    --rule-soft:#22282B;
+    --steel:#7FB3C2;
+    --ok:#63B183;
+    --ok-bg:#1B2C22;
+    --warn:#DE9163;
+    --warn-bg:#2E211A;
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 4px 14px rgba(0,0,0,.3);
+  }
+}
+:root[data-theme="dark"]{
+  --ground:#111416;
+  --surface:#1A1E21;
+  --surface-2:#161A1C;
+  --ink:#E7EAE6;
+  --ink-soft:#9BA4A8;
+  --ink-faint:#6E777C;
+  --rule:#2A3033;
+  --rule-soft:#22282B;
+  --steel:#7FB3C2;
+  --ok:#63B183;
+  --ok-bg:#1B2C22;
+  --warn:#DE9163;
+  --warn-bg:#2E211A;
+  --shadow:0 1px 2px rgba(0,0,0,.4), 0 4px 14px rgba(0,0,0,.3);
+}
+
+*{box-sizing:border-box}
+body{
+  margin:0;
+  background:var(--ground);
+  color:var(--ink);
+  font-family:var(--sans);
+  font-size:16px;
+  line-height:1.5;
+  -webkit-text-size-adjust:100%;
+}
+.wrap{max-width:720px;margin:0 auto;padding:0 14px 72px}
+
+/* ── 页眉 ───────────────────────────────── */
+.masthead{padding:26px 0 16px}
+.eyebrow{
+  font-family:var(--cond);
+  font-size:13px;letter-spacing:.16em;text-transform:uppercase;
+  color:var(--ink-faint);margin:0 0 4px;
+}
+h1{
+  font-family:var(--cond);
+  font-size:34px;font-weight:600;letter-spacing:.01em;
+  margin:0;text-wrap:balance;
+}
+.sub{margin:8px 0 0;font-size:13.5px;color:var(--ink-soft);max-width:52ch}
+
+/* ── 控制条 ─────────────────────────────── */
+.controls{
+  position:sticky;top:0;z-index:20;
+  background:color-mix(in srgb, var(--ground) 92%, transparent);
+  backdrop-filter:blur(10px);
+  padding:10px 0 12px;
+  border-bottom:1px solid var(--rule-soft);
+  display:flex;flex-direction:column;gap:9px;
+}
+.search{
+  width:100%;padding:11px 13px;
+  font:500 15px/1 var(--sans);
+  color:var(--ink);
+  background:var(--surface);
+  border:1px solid var(--rule);border-radius:9px;
+  box-shadow:var(--shadow);
+}
+.search::placeholder{color:var(--ink-faint);font-weight:400}
+.search:focus{outline:2px solid var(--steel);outline-offset:1px;border-color:transparent}
+.filters{display:flex;gap:6px}
+.chip{
+  flex:1;
+  font:500 13px/1 var(--sans);
+  padding:8px 6px;
+  color:var(--ink-soft);
+  background:var(--surface);
+  border:1px solid var(--rule);border-radius:8px;
+  cursor:pointer;
+  display:flex;align-items:center;justify-content:center;gap:6px;
+}
+.chip:focus-visible{outline:2px solid var(--steel);outline-offset:1px}
+.chip[aria-pressed="true"]{background:var(--ink);color:var(--ground);border-color:var(--ink)}
+.chip .n{font-family:var(--mono);font-size:11.5px;opacity:.75}
+
+/* ── 分区 ───────────────────────────────── */
+.region{margin:26px 0 0}
+.region-head{
+  display:flex;align-items:baseline;gap:9px;
+  padding:0 2px 8px;
+  border-bottom:1px solid var(--rule);
+  margin-bottom:10px;
+}
+.region-head h2{
+  font-family:var(--cond);
+  font-size:19px;font-weight:600;letter-spacing:.05em;
+  margin:0;
+}
+.region-head .cnt{
+  font-family:var(--mono);font-size:11.5px;color:var(--ink-faint);
+  font-variant-numeric:tabular-nums;
+}
+
+/* ── 工地条目 ───────────────────────────── */
+.list{display:flex;flex-direction:column;gap:8px}
+.site{
+  display:grid;
+  grid-template-columns:4px 1fr auto;
+  align-items:stretch;
+  background:var(--surface);
+  border:1px solid var(--rule);
+  border-radius:11px;
+  box-shadow:var(--shadow);
+  overflow:hidden;
+}
+.stripe{background:var(--ok)}
+.site.warn .stripe{background:var(--warn)}
+.body{padding:11px 4px 11px 12px;min-width:0}
+
+.line1{display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+.name{font-size:16.5px;font-weight:600;letter-spacing:-.005em}
+.badge{
+  font-family:var(--cond);
+  font-size:11.5px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;
+  padding:2px 6px;border-radius:4px;
+  background:var(--ok-bg);color:var(--ok);
+  white-space:nowrap;
+}
+.site.warn .badge{background:var(--warn-bg);color:var(--warn)}
+.meta{margin-top:3px;font-size:13px;color:var(--ink-soft);
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.coord{
+  margin-top:5px;
+  font-family:var(--mono);font-size:11.5px;color:var(--ink-faint);
+  font-variant-numeric:tabular-nums;letter-spacing:-.01em;
+}
+.note{
+  margin-top:7px;padding:6px 9px;
+  background:var(--warn-bg);
+  border-radius:6px;
+  font-size:12.5px;line-height:1.42;color:var(--warn);
+}
+
+.actions{display:flex;align-items:stretch;border-left:1px solid var(--rule-soft)}
+.go,.copy{
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:3px;
+  border:0;background:transparent;cursor:pointer;
+  font:500 11px/1 var(--sans);
+  color:var(--ink-soft);
+  text-decoration:none;
+  padding:0 13px;
+}
+.go{color:var(--steel);font-weight:600;font-size:13px}
+.go svg{width:19px;height:19px}
+.copy{border-left:1px solid var(--rule-soft);font-size:11px}
+.copy svg{width:15px;height:15px}
+.go:hover,.copy:hover{background:var(--surface-2)}
+.go:focus-visible,.copy:focus-visible{outline:2px solid var(--steel);outline-offset:-2px}
+.copy.done{color:var(--ok)}
+
+/* ── 大士说明 ───────────────────────────── */
+.callout{
+  margin:10px 0 0;padding:11px 13px;
+  background:var(--surface-2);
+  border:1px dashed var(--rule);border-radius:9px;
+  font-size:12.5px;line-height:1.5;color:var(--ink-soft);
+}
+.callout b{color:var(--ink);font-weight:600}
+
+.empty{padding:34px 4px;text-align:center;color:var(--ink-faint);font-size:14px}
+.empty[hidden]{display:none}
+
+/* ── 页脚 ───────────────────────────────── */
+footer{
+  margin-top:34px;padding-top:16px;
+  border-top:1px solid var(--rule);
+  font-size:12.5px;color:var(--ink-faint);line-height:1.6;
+}
+footer a{color:var(--steel)}
+footer p{margin:0 0 7px}
+.legend{display:flex;gap:14px;margin:0 0 11px;flex-wrap:wrap}
+.legend span{display:flex;align-items:center;gap:6px}
+.dot{width:9px;height:9px;border-radius:2px;background:var(--ok);flex:none}
+.dot.w{background:var(--warn)}
+
+@media (max-width:420px){
+  h1{font-size:29px}
+  .body{padding:10px 2px 10px 11px}
+  .go{padding:0 11px}
+  .copy{padding:0 10px}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+
+<div class="wrap">
+
+  <header class="masthead">
+    <p class="eyebrow">JIA AN Construction</p>
+    <h1>工地导航</h1>
+    <p class="sub">20 处在建工地。点「导航」直接开始，点「坐标」复制经纬度转发。</p>
+  </header>
+
+  <div class="controls">
+    <input class="search" id="q" type="search" placeholder="搜工地、总包、路名…" autocomplete="off" aria-label="搜索工地">
+    <div class="filters" role="group" aria-label="按位置状态筛选">
+      <button class="chip" data-f="all" aria-pressed="true">全部 <span class="n">21</span></button>
+      <button class="chip" data-f="ok" aria-pressed="false">位置已确认 <span class="n">8</span></button>
+      <button class="chip" data-f="warn" aria-pressed="false">位置待核 <span class="n">13</span></button>
+    </div>
+  </div>
+
+  <main id="list"></main>
+  <p class="empty" id="empty" hidden>没有匹配的工地</p>
+
+  <footer>
+    <div class="legend">
+      <span><i class="dot"></i> 位置已核实</span>
+      <span><i class="dot w"></i> 区域级近似，以现场为准</span>
+    </div>
+    <p>JIA AN CONSTRUCTION PTE. LTD. 现场用途。坐标为导航参考，不代表塔吊机位。</p>
+    <p>更新于 2026-08-24</p>
+  </footer>
+</div>
+
+<script>
+const SITES = [
+ {r:"CBD / 中部", s:[
+  {id:"05",n:"阿里巴巴大厦 / 8SW",c:"CHEC",a:"8 Shenton Way",lat:1.275837,lng:103.847310,ok:1},
+  {id:"18",n:"英莪街 / 15EG",c:"CHEC",a:"15 Enggor Street",lat:1.274520,lng:103.844304,ok:1},
+  {id:"19",n:"索菲亚路 / 1 Sophia",c:"CHEC",a:"1 Sophia Road, S228149",lat:1.301271,lng:103.849433,ok:1},
+  {id:"16",n:"黄金大厦 / Golden Mile",c:"CRCG-CCECC JV",a:"Golden Mile Complex, Beach Road, S199588",lat:1.302785,lng:103.865156,ok:1}
+ ]},
+ {r:"中西 / 女皇镇一带", s:[
+  {id:"01",n:"波那维斯达 / LBD",c:"Teambuild",a:"Ghim Moh Road",lat:1.311738,lng:103.787445,ok:1},
+  {id:"06",n:"威马荷兰 / Holland C1Park",c:"WEIMA",a:"Holland Drive",lat:1.309879,lng:103.792903,ok:0}
+ ]},
+ {r:"中北", s:[
+  {id:"08",n:"威马 Pemimpin",c:"WEIMA",a:"43 Jalan Pemimpin, S577192",lat:1.350059,lng:103.842352,ok:1}
+ ]},
+ {r:"东部", s:[
+  {id:"14",n:"威马 Changi",c:"WEIMA",a:"720 Upper Changi Road East, S486852",lat:1.346331,lng:103.965886,ok:1}
+ ]},
+ {r:"北部", s:[
+  {id:"07",n:"乌兰 / 兀兰 LCT",c:"LC&T Builder",a:"Woodlands",lat:1.438192,lng:103.788960,ok:0}
+ ]},
+ {r:"裕廊 / 先驱", s:[
+  {id:"17",n:"JPJC / 裕廊先驱初院",c:"Kuan Aik Hong",a:"800 Corporation Road",lat:1.351308,lng:103.713713,ok:1},
+  {id:"02",n:"裕廊东 LCT",c:"LC&T Builder",a:"Jurong East",lat:1.332857,lng:103.743552,ok:0},
+  {id:"03",n:"威马 Sunview",c:"WEIMA",a:"Sunview Way",lat:1.319073,lng:103.700199,ok:0},
+  {id:"04",n:"先驱 / Pioneer",c:"NIPPON Builders",a:"Pioneer Turn",lat:1.320860,lng:103.701783,ok:0},
+  {id:"11",n:"面粉厂 / Prima",c:"CHEC",a:"Jurong Port Road",lat:1.313250,lng:103.719241,ok:0},
+  {id:"12",n:"雷默 / BBCC",c:"RAMO Industries",a:"Bukit Batok Central",lat:1.349721,lng:103.749971,ok:0}
+ ]},
+ {r:"大士 / 裕廊岛", tuas:1, s:[
+  {id:"09",n:"CES C6A",c:"CES_SDC-SALCON JV",a:"Tuas South Avenue 3",lat:1.307079,lng:103.626147,ok:0},
+  {id:"10",n:"CES C4A",c:"CES_SDC",a:"Tuas South Avenue 3",lat:1.307079,lng:103.626147,ok:0},
+  {id:"13",n:"中国水电 Tuas C3C",c:"SINOHYDRO",a:"Tuas South Avenue 3",lat:1.307079,lng:103.626147,ok:0},
+  {id:"20",n:"大士水厂 C2A",c:"CHEC",a:"Tuas South Avenue 3",lat:1.307079,lng:103.626147,ok:0},
+  {id:"15",n:"CREC 裕廊岛",c:"CREC Construction",a:"Jurong Island",lat:1.275963,lng:103.676796,ok:0}
+ ]}
+];
+
+const ICON_GO = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l19-9-9 19-2-8-8-2z"/></svg>';
+const ICON_COPY = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>';
+
+const esc = t => String(t).replace(/[&<>"]/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]));
+const list = document.getElementById('list');
+const empty = document.getElementById('empty');
+let filter = 'all', query = '';
+
+function card(s){
+  const cls = s.ok ? '' : ' warn';
+  const coord = s.lat.toFixed(6) + ', ' + s.lng.toFixed(6);
+  return `<article class="site${cls}">
+    <div class="stripe"></div>
+    <div class="body">
+      <div class="line1">
+        <span class="name">${esc(s.n)}</span>
+        <span class="badge">${s.ok ? '已确认' : '位置待核'}</span>
+      </div>
+      <div class="meta">${esc(s.c)} · ${esc(s.a)}</div>
+      <div class="coord">${coord}</div>
+      ${s.note ? `<div class="note">${esc(s.note)}</div>` : ''}
+    </div>
+    <div class="actions">
+      <a class="go" href="https://www.google.com/maps/dir/?api=1&destination=${s.lat},${s.lng}"
+         target="_blank" rel="noopener" aria-label="导航到 ${esc(s.n)}">${ICON_GO}导航</a>
+      <button class="copy" data-coord="${coord}" aria-label="复制 ${esc(s.n)} 的坐标">${ICON_COPY}坐标</button>
+    </div>
+  </article>`;
+}
+
+function render(){
+  const q = query.trim().toLowerCase();
+  let shown = 0;
+  list.innerHTML = SITES.map(g => {
+    const hits = g.s.filter(s => {
+      if (filter === 'ok' && !s.ok) return false;
+      if (filter === 'warn' && s.ok) return false;
+      if (!q) return true;
+      return (s.n + ' ' + s.c + ' ' + s.a + ' ' + g.r + ' ' + s.id).toLowerCase().includes(q);
+    });
+    if (!hits.length) return '';
+    shown += hits.length;
+    const tuas = g.tuas && hits.length > 1
+      ? `<div class="callout"><b>四个标段共用一个坐标。</b>C6A / C4A / C3C / C2A 同在 Tuas Nexus 厂区，
+         导航只能带到厂区，进场后需认标段。</div>`
+      : '';
+    return `<section class="region">
+      <div class="region-head"><h2>${esc(g.r)}</h2><span class="cnt">${hits.length}</span></div>
+      <div class="list">${hits.map(card).join('')}</div>
+      ${tuas}
+    </section>`;
+  }).join('');
+  empty.hidden = shown > 0;
+}
+
+document.getElementById('q').addEventListener('input', e => { query = e.target.value; render(); });
+
+document.querySelectorAll('.chip').forEach(btn => {
+  btn.addEventListener('click', () => {
+    filter = btn.dataset.f;
+    document.querySelectorAll('.chip').forEach(b =>
+      b.setAttribute('aria-pressed', String(b === btn)));
+    render();
+  });
+});
+
+list.addEventListener('click', async e => {
+  const btn = e.target.closest('.copy');
+  if (!btn) return;
+  try {
+    await navigator.clipboard.writeText(btn.dataset.coord);
+  } catch {
+    const ta = document.createElement('textarea');
+    ta.value = btn.dataset.coord;
+    document.body.appendChild(ta); ta.select();
+    document.execCommand('copy'); ta.remove();
+  }
+  const was = btn.innerHTML;
+  btn.classList.add('done');
+  btn.innerHTML = ICON_COPY + '已复制';
+  setTimeout(() => { btn.classList.remove('done'); btn.innerHTML = was; }, 1400);
+});
+
+render();
+</script>
