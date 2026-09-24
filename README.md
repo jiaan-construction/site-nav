@@ -35,3 +35,10 @@
 工地名和总包是可以的——公司业绩表里本来就公开着。
 
 > 单文件。地图用 Leaflet + OpenStreetMap，需要联网。
+
+## Notion 嵌入版
+
+**https://jiaan-construction.github.io/site-nav/notion.html**
+
+在 Notion 里输入 `/embed` 粘贴这个网址。左边地图、右边工地列表，点列表定位到点位，点点位弹出「导航」。
+它不存数据：运行时读同目录 `index.html` 里的 `DATA`，所以 `index.html` 重新生成后自动跟着变，不用单独维护。
