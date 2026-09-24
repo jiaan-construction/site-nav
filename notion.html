@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="zh-Hans">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>工地地图</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css">
+<script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
+<!--
+  Notion 嵌入版。数据不在这里：运行时读同目录 index.html 里的 DATA，
+  所以只要 index.html 重新生成，这一页自动跟着变，不需要单独维护。
+-->
+<style>
+:root{
+  --brand:#E9272C; --ink:#111111; --ink-soft:#5E6367; --ink-faint:#8C9296;
+  --ground:#FFFFFF; --surface:#F6F7F9; --rule:#E4E7EB;
+  --settled:#2E3438; --pending:#B4620F; --pending-bg:#FBEEDF; --settled-bg:#ECEEF0;
+  --sans:-apple-system,BlinkMacSystemFont,"Helvetica Neue",Arial,"PingFang SC","Microsoft YaHei",sans-serif;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --brand:#FF5054; --ink:#EDEEEF; --ink-soft:#A0A6AA; --ink-faint:#767C81;
+    --ground:#191919; --surface:#202020; --rule:#2F3337;
+    --settled:#C3CACE; --pending:#E0953F; --pending-bg:#2E2415; --settled-bg:#2A2E32;
+  }
+}
+:root[data-theme="dark"]{
+  --brand:#FF5054; --ink:#EDEEEF; --ink-soft:#A0A6AA; --ink-faint:#767C81;
+  --ground:#191919; --surface:#202020; --rule:#2F3337;
+  --settled:#C3CACE; --pending:#E0953F; --pending-bg:#2E2415; --settled-bg:#2A2E32;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:var(--ground);color:var(--ink);font:14px/1.45 var(--sans);overflow:hidden}
+.app{display:grid;grid-template-columns:1fr 260px;height:100vh}
+#map{height:100%;background:var(--surface)}
+aside{border-left:1px solid var(--rule);display:flex;flex-direction:column;min-height:0}
+.head{padding:12px 14px 8px;border-bottom:1px solid var(--rule)}
+.head b{font-size:15px}
+.head .sub{color:var(--ink-soft);font-size:12px;margin-top:2px}
+.legend{display:flex;gap:12px;margin-top:8px;font-size:12px;color:var(--ink-soft)}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:5px;vertical-align:-1px}
+.list{overflow-y:auto;flex:1;padding:4px 0}
+.rg{font-size:11px;letter-spacing:.04em;color:var(--ink-faint);padding:10px 14px 4px;text-transform:uppercase}
+.row{display:flex;align-items:center;gap:8px;width:100%;padding:7px 14px;border:0;background:none;color:inherit;
+  font:inherit;text-align:left;cursor:pointer}
+.row:hover,.row.hi{background:var(--surface)}
+.row .dot{flex:none}
+.row .t{flex:1;min-width:0}
+.row .n{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.row .c{display:block;font-size:12px;color:var(--ink-faint);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dot{width:10px;height:10px;border-radius:50%;background:var(--settled)}
+.dot.p{background:var(--pending)}
+.foot{border-top:1px solid var(--rule);padding:8px 14px;font-size:12px}
+.foot a{color:var(--brand);text-decoration:none}
+.pin{width:18px;height:18px;border-radius:50%;background:var(--settled);border:3px solid var(--ground);
+  box-shadow:0 1px 4px rgba(0,0,0,.35);margin:13px}
+.pin.p{background:var(--pending)}
+.leaflet-tooltip.lbl{background:var(--ground);color:var(--ink);border:1px solid var(--rule);box-shadow:none;
+  font:600 12px var(--sans);padding:2px 6px}
+.leaflet-tooltip.lbl::before{display:none}
+.leaflet-popup-content-wrapper,.leaflet-popup-tip{background:var(--ground);color:var(--ink)}
+.pop b{font-size:14px}.pop .m{display:block;color:var(--ink-soft);font-size:12px;margin:3px 0 8px}
+.pop a{display:inline-block;background:var(--brand);color:#fff;border-radius:6px;padding:5px 12px;text-decoration:none;font-weight:600}
+.msg{padding:24px;color:var(--ink-soft)}
+@media (max-width:640px){
+  .app{grid-template-columns:1fr;grid-template-rows:1fr 200px}
+  aside{border-left:0;border-top:1px solid var(--rule)}
+  .head{display:none}
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <div id="map"></div>
+  <aside>
+    <div class="head">
+      <b>JIA AN 在建工地</b>
+      <div class="sub" id="sub">加载中…</div>
+      <div class="legend"><span><i style="background:var(--settled)"></i>位置已核</span><span><i style="background:var(--pending)"></i>区域近似</span></div>
+    </div>
+    <div class="list" id="list"></div>
+    <div class="foot"><a href="./" target="_blank" rel="noopener">打开完整导航页 ↗</a></div>
+  </aside>
+</div>
+<script>
+const esc = t => String(t).replace(/[&<>"]/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]));
+const dirUrl = s => `https://www.google.com/maps/dir/?api=1&destination=${s.lat},${s.lng}`;
+const dark = matchMedia('(prefers-color-scheme: dark)').matches;
+
+async function loadData(){
+  const html = await (await fetch('./index.html', {cache:'no-cache'})).text();
+  const i = html.indexOf('const DATA = ');
+  if (i < 0) throw new Error('no DATA');
+  const s = html.indexOf('{', i);
+  let depth = 0, inStr = false, esc_ = false, j = s;
+  for (; j < html.length; j++){
+    const c = html[j];
+    if (inStr){ if (esc_) esc_ = false; else if (c === '\\') esc_ = true; else if (c === '"') inStr = false; continue; }
+    if (c === '"') inStr = true;
+    else if (c === '{') depth++;
+    else if (c === '}' && --depth === 0) break;
+  }
+  return JSON.parse(html.slice(s, j + 1));
+}
+
+loadData().then(DATA => {
+  const sites = DATA.sites;
+  document.getElementById('sub').textContent = `${sites.length} 处 · 数据 ${DATA.generated}`;
+
+  const list = document.getElementById('list');
+  list.innerHTML = DATA.regions.map(rg => {
+    const hits = sites.filter(s => s.region === rg);
+    if (!hits.length) return '';
+    return `<div class="rg">${esc(rg)} · ${hits.length}</div>` + hits.map(s =>
+      `<button class="row" data-id="${s.id}"><span class="dot${s.confirmed ? '' : ' p'}"></span>
+        <span class="t"><span class="n">${esc(s.name)}</span><span class="c">${esc(s.address)}</span></span></button>`).join('');
+  }).join('');
+
+  const markers = {};
+  let map = null;
+  if (typeof L === 'undefined') {
+    document.getElementById('map').innerHTML = '<div class="msg">地图组件没加载出来（网络问题），右侧列表和导航照常可用。</div>';
+  } else {
+  map = L.map('map', {scrollWheelZoom:false, zoomControl:true});
+  map.on('focus', () => map.scrollWheelZoom.enable());
+  map.on('blur', () => map.scrollWheelZoom.disable());
+  L.tileLayer(`https://{s}.basemaps.cartocdn.com/${dark ? 'dark_all' : 'light_all'}/{z}/{x}/{y}{r}.png`, {
+    maxZoom: 19, subdomains: 'abcd',
+    attribution: '&copy; OpenStreetMap &copy; CARTO'
+  }).addTo(map);
+
+  const seen = {}, pts = [];
+  sites.forEach(s => {
+    const key = s.lat + ',' + s.lng;
+    const n = (seen[key] = (seen[key] || 0) + 1) - 1;
+    const ang = n * (Math.PI / 3), r = n ? 0.0025 : 0;   // 同坐标散开，仅显示偏移
+    const ll = [s.lat + r * Math.cos(ang), s.lng + r * Math.sin(ang)];
+    pts.push(ll);
+    const m = L.marker(ll, {
+      icon: L.divIcon({className:'', iconSize:[44,44], iconAnchor:[22,22], popupAnchor:[0,-12],
+                       html:`<div class="pin${s.confirmed ? '' : ' p'}"></div>`}),
+      title: s.name
+    }).bindTooltip(esc(s.name), {className:'lbl', direction:'right', offset:[8,0]})
+      .bindPopup(`<div class="pop"><b>${esc(s.name)}</b>
+        <span class="m">${esc(s.client)}<br>${esc(s.address)}${s.confirmed ? '' : '<br>区域近似，按现场为准'}</span>
+        <a href="${dirUrl(s)}" target="_blank" rel="noopener">导航</a></div>`)
+      .on('click', () => hi(s.id))
+      .addTo(map);
+    markers[s.id] = m;
+  });
+  const all = L.latLngBounds(pts);
+  map.fitBounds(all, {padding:[30,30]});
+
+  // 缩得很远时只显示点，放大后显示名字，避免标签叠成一团
+  const syncLabels = () => {
+    const show = map.getZoom() >= 13;
+    Object.values(markers).forEach(m => show ? m.openTooltip() : m.closeTooltip());
+  };
+  map.on('zoomend', syncLabels); syncLabels();
+
+  }
+
+  function hi(id){
+    list.querySelectorAll('.row.hi').forEach(x => x.classList.remove('hi'));
+    const el = list.querySelector(`[data-id="${id}"]`);
+    if (el){ el.classList.add('hi'); el.scrollIntoView({block:'nearest', behavior:'smooth'}); }
+  }
+  list.addEventListener('click', e => {
+    const b = e.target.closest('.row'); if (!b) return;
+    const m = markers[b.dataset.id];
+    if (!m) { const s = sites.find(x => x.id === b.dataset.id); window.open(dirUrl(s), '_blank', 'noopener'); return; }
+    map.flyTo(m.getLatLng(), 15, {duration:.6});
+    m.openPopup(); hi(b.dataset.id);
+  });
+}).catch(() => {
+  document.getElementById('map').innerHTML =
+    '<div class="msg">地图数据加载失败。请打开 <a href="./">完整导航页</a>。</div>';
+  document.getElementById('sub').textContent = '加载失败';
+});
+</script>
+</body>
+</html>
